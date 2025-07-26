@@ -11,7 +11,7 @@ const {
   Browsers,
   jidNormalizedUser,
 } = require("@whiskeysockets/baileys");
-const { upload } = require("./mega");
+const { upload } = require("./mega"); // MEGA upload function
 
 function removeFile(FilePath) {
   if (!fs.existsSync(FilePath)) return false;
@@ -20,6 +20,7 @@ function removeFile(FilePath) {
 
 router.get("/", async (req, res) => {
   let num = req.query.number;
+
   async function RobinPair() {
     const { state, saveCreds } = await useMultiFileAuthState(`./session`);
     try {
@@ -48,57 +49,50 @@ router.get("/", async (req, res) => {
       RobinPairWeb.ev.on("creds.update", saveCreds);
       RobinPairWeb.ev.on("connection.update", async (s) => {
         const { connection, lastDisconnect } = s;
+
         if (connection === "open") {
           try {
-            await delay(10000);
-            const sessionPrabath = fs.readFileSync("./session/creds.json");
+            console.log("🔌 Connected to WhatsApp!");
+
+            await delay(5000); // Give time for connection
 
             const auth_path = "./session/";
             const user_jid = jidNormalizedUser(RobinPairWeb.user.id);
-
-            function randomMegaId(length = 6, numberLength = 4) {
-              const characters =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-              let result = "";
-              for (let i = 0; i < length; i++) {
-                result += characters.charAt(
-                  Math.floor(Math.random() * characters.length)
-                );
-              }
-              const number = Math.floor(
-                Math.random() * Math.pow(10, numberLength)
-              );
-              return `${result}${number}`;
-            }
-
             const mega_url = await upload(
               fs.createReadStream(auth_path + "creds.json"),
-              `${randomMegaId()}.json`
+              `session_${Date.now()}.json`
             );
+            const string_session = mega_url.replace("https://mega.nz/file/", "");
 
-            const string_session = mega_url.replace(
-              "https://mega.nz/file/",
-              ""
-            );
+            const full_caption = `*𓃭ᙘᒪàᑤҚ ᙎᓎᒪᖴ☯︎ [『d』『a』『r』『k』 WA BOT] ᗰᗩᗪᗴ ᗷY ՏᕼᗩՏᕼIKᗩ*\n\n*╔════════•●•════════╗*\n*${string_session}*\n*╚════════•●•════════╝*\n\n*𓆩𝐓𝐡𝐢𝐬 𝐢𝐬 𝐲𝐨𝐮𝐫 𝐒𝐞𝐬𝐬𝐢𝐨𝐧 𝐈𝐃𓆪 — ꧁༺Copy this and paste into config.js༻꧂*`;
 
-            const sid = `*𓃭ᙘᒪàᑤҚ ᙎᓎᒪᖴ☯︎ [『d』『a』『r』『k』 WA BOT] ᗰᗩᗪᗴ ᗷY ՏᕼᗩՏᕼIKᗩ*\n\n*╔════════•●•════════╗*\n*${string_session}*\n*╚════════•●•════════╝*\n\n*𓆩𝐓𝐡𝐢𝐬 𝐢𝐬 𝐭𝐡𝐞 𝐲𝐨𝐮𝐫 𝐒𝐞𝐬𝐬𝐢𝐨𝐧 𝐈𝐃𓆪, ꧁༺copy this id and paste into config.js file ༻꧂*\n\n*You can ask any question using this link*\n\n*https://wa.me/94776907496*\n\n*█ ✪ █▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓█ ✪ █*\n*♡٨ﮩ٨ﮩﮩ٨ﮩﮩ٨ﮩ ᗯE♡ᒪOᐯE♡YOᑌ♡ᖴOᖇ♡ᗩᒪᗯᗩYᔕ♡ᗷEIᑎG♡ᗯITᕼ♡ᑌᔕ. ﮩ٨ﮩﮩ٨ﮩﮩ٨ﮩ٨♡*\n*█ ✪ █▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓█ ✪ █*`;
-            const mg = `☠ *Sharing the code is strictly prohibited.* ☠`;
-            const dt = await RobinPairWeb.sendMessage(user_jid, {
-              video: {
-                url: "https://github.com/shashika2008/-K-O-/blob/main/InShot_20250726_080955126.jpg",
+            const warning = "☠ *Sharing the code is strictly prohibited.* ☠";
+            const welcome = "🌟 *Welcome to the Dark Wolf WhatsApp Bot!* 🌟\n\nYou are now successfully paired. Feel free to explore and enjoy using commands.\n\n⚠️ For help, type: *.help*";
+
+            // Send welcome message
+            await RobinPairWeb.sendMessage(user_jid, { text: welcome });
+
+            // Send session ID as caption to image (DIRECT IMAGE LINK from raw.githubusercontent.com)
+            await RobinPairWeb.sendMessage(user_jid, {
+              image: {
+                url: "https://raw.githubusercontent.com/shashika2008/-K-O-/main/InShot_20250726_080955126.jpg",
               },
-              caption: sid,
+              caption: full_caption,
             });
-            const msg = await RobinPairWeb.sendMessage(user_jid, {
-              text: string_session,
-            });
-            const msg1 = await RobinPairWeb.sendMessage(user_jid, { text: mg });
-          } catch (e) {
+
+            // Send raw session ID
+            await RobinPairWeb.sendMessage(user_jid, { text: string_session });
+
+            // Send warning
+            await RobinPairWeb.sendMessage(user_jid, { text: warning });
+
+          } catch (err) {
+            console.error("❌ Error sending messages:", err);
             exec("pm2 restart prabath");
           }
 
-          await delay(100);
-          return await removeFile("./session");
+          await delay(3000); // Allow some time before cleanup
+          removeFile("./session");
           process.exit(0);
         } else if (
           connection === "close" &&
@@ -112,15 +106,16 @@ router.get("/", async (req, res) => {
       });
     } catch (err) {
       exec("pm2 restart Robin-md");
-      console.log("service restarted");
+      console.log("🔁 Service restarted due to error.");
       RobinPair();
-      await removeFile("./session");
+      removeFile("./session");
       if (!res.headersSent) {
         await res.send({ code: "Service Unavailable" });
       }
     }
   }
-  return await RobinPair();
+
+  await RobinPair();
 });
 
 process.on("uncaughtException", function (err) {
@@ -129,3 +124,4 @@ process.on("uncaughtException", function (err) {
 });
 
 module.exports = router;
+;
